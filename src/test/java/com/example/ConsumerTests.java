@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRunner;
 import org.springframework.cloud.contract.stubrunner.spring.StubRunnerPort;
+import org.springframework.cloud.contract.stubrunner.spring.StubRunnerProperties;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.web.client.RestTemplate;
@@ -12,7 +13,7 @@ import org.springframework.web.client.RestTemplate;
 import static org.assertj.core.api.BDDAssertions.then;
 
 @SpringBootTest
-@AutoConfigureStubRunner(ids = "com.example:beer-api-producer")
+@AutoConfigureStubRunner(ids = "com.example:beer-api-producer", stubsMode = StubRunnerProperties.StubsMode.LOCAL)
 public class ConsumerTests {
 
 	@StubRunnerPort("beer-api-producer") int port;

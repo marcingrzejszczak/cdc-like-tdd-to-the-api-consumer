@@ -71,16 +71,9 @@ public class ConsumerTests {
 * Go to the producer side and install stubs
 * Write a passing test with stubs
 
-add stub runner and the dependency to the `pom.xml`
+add stub runner dependency to the `pom.xml`
 
 ```xml
-
-		<dependency>
-			<groupId>com.example</groupId>
-			<artifactId>beer-api-producer</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-			<classifier>stubs</classifier>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
@@ -93,11 +86,10 @@ modify the test to use stub runner
 ```java
 package com.example;
 
-import org.junit.jupiter.api.Test;
-
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRunner;
 import org.springframework.cloud.contract.stubrunner.spring.StubRunnerPort;
+import org.springframework.cloud.contract.stubrunner.spring.StubRunnerProperties;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.web.client.RestTemplate;
@@ -105,7 +97,7 @@ import org.springframework.web.client.RestTemplate;
 import static org.assertj.core.api.BDDAssertions.then;
 
 @SpringBootTest
-@AutoConfigureStubRunner(ids = "com.example:beer-api-producer")
+@AutoConfigureStubRunner(ids = "com.example:beer-api-producer", stubsMode = StubRunnerProperties.StubsMode.LOCAL)
 public class ConsumerTests {
 
 	@StubRunnerPort("beer-api-producer") int port;
@@ -119,7 +111,7 @@ public class ConsumerTests {
 						"""), String.class);
 
 		then(exchange.getStatusCodeValue()).isEqualTo(200);
-		then(exchange.getBody()).contains("OK");
+		then(exchange.getBody()).contains("\"OK");
 	}
 
 	@Test
