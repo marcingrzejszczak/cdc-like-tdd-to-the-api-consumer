@@ -1,0 +1,139 @@
+= Consumer Driven Contracts like TDD to the API - script
+
+IMPORTANT: Requires JDK16!!!
+
+== Consumer side:
+
+* Write an empty test that describes the behaviour
+
+```java
+public class ConsumerTests {
+
+	@Test
+	void should_grant_beer_when_old_enough() {
+
+	}
+
+	@Test
+	void should_reject_beer_when_too_young() {
+
+	}
+
+}
+```
+
+* Write a failing test that describes the behaviour (nothing running on port)
+
+```java
+package com.example;
+
+import org.assertj.core.api.BDDAssertions;
+import org.junit.jupiter.api.Test;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import static org.assertj.core.api.BDDAssertions.then;
+
+public class ConsumerTests {
+
+	int port = 9876;
+
+	@Test
+	void should_grant_beer_when_old_enough() {
+		var exchange = new RestTemplate().exchange(RequestEntity.post("http://localhost:" + port + "/check")
+				.contentType(MediaType.APPLICATION_JSON)
+				.body("""
+						{ "age": 45 }
+						"""), String.class);
+
+		then(exchange.getStatusCodeValue()).isEqualTo(200);
+		then(exchange.getBody()).contains("OK");
+	}
+
+	@Test
+	void should_reject_beer_when_too_young() {
+		var exchange = new RestTemplate().exchange(RequestEntity.post("http://localhost:" + port + "/check")
+				.contentType(MediaType.APPLICATION_JSON)
+				.body("""
+						{ "age": 17 }
+						"""), String.class);
+
+		then(exchange.getStatusCodeValue()).isEqualTo(200);
+		then(exchange.getBody()).contains("NOT_OK");
+	}
+
+}
+```
+
+* Go to the producer side and install stubs
+* Write a passing test with stubs
+
+add stub runner and the dependency to the `pom.xml`
+
+```xml
+
+		<dependency>
+			<groupId>com.example</groupId>
+			<artifactId>beer-api-producer</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<classifier>stubs</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
+			<scope>test</scope>
+		</dependency>
+```
+
+modify the test to use stub runner
+
+```java
+package com.example;
+
+import org.junit.jupiter.api.Test;
+
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.contract.stubrunner.spring.AutoConfigureStubRunner;
+import org.springframework.cloud.contract.stubrunner.spring.StubRunnerPort;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.web.client.RestTemplate;
+
+import static org.assertj.core.api.BDDAssertions.then;
+
+@SpringBootTest
+@AutoConfigureStubRunner(ids = "com.example:beer-api-producer")
+public class ConsumerTests {
+
+	@StubRunnerPort("beer-api-producer") int port;
+
+	@Test
+	void should_grant_beer_when_old_enough() {
+		var exchange = new RestTemplate().exchange(RequestEntity.post("http://localhost:" + port + "/check")
+				.contentType(MediaType.APPLICATION_JSON)
+				.body("""
+						{ "age": 45 }
+						"""), String.class);
+
+		then(exchange.getStatusCodeValue()).isEqualTo(200);
+		then(exchange.getBody()).contains("OK");
+	}
+
+	@Test
+	void should_reject_beer_when_too_young() {
+		var exchange = new RestTemplate().exchange(RequestEntity.post("http://localhost:" + port + "/check")
+				.contentType(MediaType.APPLICATION_JSON)
+				.body("""
+						{ "age": 17 }
+						"""), String.class);
+
+		then(exchange.getStatusCodeValue()).isEqualTo(200);
+		then(exchange.getBody()).contains("NOT_OK");
+	}
+
+}
+```
+
